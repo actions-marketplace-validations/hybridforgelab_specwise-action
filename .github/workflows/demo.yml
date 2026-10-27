@@ -1,0 +1,22 @@
+name: Demo
+
+# The action on a real pull request: open a PR that changes demo/openapi.yaml to see the comment and the
+# annotations. Add the label breaking-ok to accept the breaking changes.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    paths: ["demo/**"]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  specwise:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./
+        with:
+          rapidapi-key: ${{ secrets.RAPIDAPI_KEY }}
+          spec-paths: "demo/**/openapi.yaml"

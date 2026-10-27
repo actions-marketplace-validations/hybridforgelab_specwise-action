@@ -1,0 +1,89 @@
+name: Specwise OpenAPI breaking-change check
+description: "Find the breaking changes a pull request makes to your OpenAPI spec: PR comment, annotations, fail unless labelled."
+author: Hybrid Forge Lab
+branding:
+  icon: git-pull-request
+  color: green
+
+inputs:
+  rapidapi-key:
+    description: Your RapidAPI key for the Specwise API (store it as a secret). The free Basic plan has 15 requests a month.
+    required: true
+  spec-paths:
+    description: Comma-separated globs for OpenAPI 3.x specs (YAML or JSON).
+    default: "**/openapi.yaml,**/openapi.yml,**/openapi.json,**/*.openapi.yaml,**/*.openapi.yml,**/*.openapi.json"
+  exclude-paths:
+    description: Comma-separated globs to skip.
+    default: "**/node_modules/**,**/vendor/**"
+  base-ref:
+    description: Commit, branch or tag to compare against. Default the pull request's base, or the previous commit on a push.
+    default: ""
+  fail-on-breaking:
+    description: "`true` fails the step when a spec has breaking changes, unless the pull request has `allow-label`."
+    default: "true"
+  allow-label:
+    description: A pull request label that accepts the breaking changes. Empty to disable.
+    default: breaking-ok
+  validate:
+    description: "`true` also validates every changed spec (one more request each) and fails on errors."
+    default: "false"
+  comment:
+    description: "`true` posts the report as a pull request comment, updated on every run. Needs `pull-requests: write`."
+    default: "true"
+  max-requests:
+    description: Maximum API requests per run (one changed spec = one request, two with validate). Specs over the cap are listed as not checked.
+    default: "10"
+  on-quota-exceeded:
+    description: "`warn` (default) or `fail` when the monthly quota is exhausted."
+    default: warn
+  github-token:
+    description: Token used to read labels and the base version, and to comment.
+    default: ${{ github.token }}
+
+outputs:
+  passed:
+    description: "`true` when the check passed."
+    value: ${{ steps.check.outputs.passed }}
+  breaking:
+    description: "`true` when any spec has breaking changes (even if a label accepted them)."
+    value: ${{ steps.check.outputs.breaking }}
+  breaking-changes:
+    description: Number of breaking changes across all specs.
+    value: ${{ steps.check.outputs.breaking-changes }}
+  changes:
+    description: Number of changes across all specs.
+    value: ${{ steps.check.outputs.changes }}
+  semver:
+    description: "Suggested version bump: `major`, `minor`, `patch` or `none`."
+    value: ${{ steps.check.outputs.semver }}
+  specs-compared:
+    description: Number of specs compared with their base version.
+    value: ${{ steps.check.outputs.specs-compared }}
+  requests-used:
+    description: API requests used by this run.
+    value: ${{ steps.check.outputs.requests-used }}
+  quota-remaining:
+    description: Requests left this month, from RapidAPI's response headers (empty if unknown).
+    value: ${{ steps.check.outputs.quota-remaining }}
+  comment-url:
+    description: URL of the pull request comment (empty when none was posted).
+    value: ${{ steps.check.outputs.comment-url }}
+
+runs:
+  using: composite
+  steps:
+    - id: check
+      shell: bash
+      run: '"$GITHUB_ACTION_PATH/scripts/run.sh"'
+      env:
+        INPUT_RAPIDAPI_KEY: ${{ inputs.rapidapi-key }}
+        INPUT_SPEC_PATHS: ${{ inputs.spec-paths }}
+        INPUT_EXCLUDE_PATHS: ${{ inputs.exclude-paths }}
+        INPUT_BASE_REF: ${{ inputs.base-ref }}
+        INPUT_FAIL_ON_BREAKING: ${{ inputs.fail-on-breaking }}
+        INPUT_ALLOW_LABEL: ${{ inputs.allow-label }}
+        INPUT_VALIDATE: ${{ inputs.validate }}
+        INPUT_COMMENT: ${{ inputs.comment }}
+        INPUT_MAX_REQUESTS: ${{ inputs.max-requests }}
+        INPUT_ON_QUOTA_EXCEEDED: ${{ inputs.on-quota-exceeded }}
+        INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
