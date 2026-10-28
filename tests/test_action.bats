@@ -10,6 +10,7 @@ setup() {
   export MOCK_DIR="$BATS_TEST_TMPDIR/mock" REPO="$BATS_TEST_TMPDIR/repo"
   mkdir -p "$MOCK_DIR" "$REPO"
   cp -R "$FIX/repo/." "$REPO/"
+  mkdir -p "$REPO/api" # git keeps no empty folders
   git -C "$REPO" init -q
   cp "$FIX/base.yaml" "$REPO/api/openapi.yaml"
   BASE="$(commit base)"
